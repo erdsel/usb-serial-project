@@ -17,6 +17,11 @@ class _MyAppState extends State<MyApp> {
   String _status = "Idle";
   List<Widget> _ports = [];
   List<Widget> _serialData = [];
+  List<String> keys = [
+    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+    'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+    'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace'
+  ];
 
   StreamSubscription<String>? _subscription;
   Transaction<String>? _transaction;
@@ -107,11 +112,15 @@ class _MyAppState extends State<MyApp> {
       print(_ports);
     });
   }
-
+  void shuffleKeys() {
+    setState(() {
+      keys.shuffle();
+    });
+  }
   @override
   void initState() {
     super.initState();
-
+    shuffleKeys();
     UsbSerial.usbEventStream!.listen((UsbEvent event) {
       _getPorts();
     });
@@ -124,7 +133,32 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
     _connectTo(null);
   }
-
+  // Sanal Klavye için bir Widget
+  Widget buildVirtualKeyboard() {
+    return GridView.count(
+      crossAxisCount: 10,
+      children: keys.map((key) {
+        return InkWell(
+          onTap: () {
+            if (key == 'Backspace') {
+              if (_textController.text.isNotEmpty) {
+                _textController.text = _textController.text.substring(0, _textController.text.length - 1);
+              }
+            } else {
+              _textController.text += key;
+            }
+          },
+          child: Container(
+            margin: EdgeInsets.all(2),
+            padding: EdgeInsets.all(5),
+            alignment: Alignment.center,
+            color: Colors.blue,
+            child: Text(key, style: TextStyle(color: Colors.white, fontSize: 20)),
+          ),
+        );
+      }).toList(),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -140,6 +174,7 @@ class _MyAppState extends State<MyApp> {
                 Text('info: ${_port.toString()}\n'),
                 ListTile(
                   title: TextField(
+                    readOnly: true,
                     controller: _textController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -162,7 +197,12 @@ class _MyAppState extends State<MyApp> {
                 ),
                 Text("Result Data", style: Theme.of(context).textTheme.titleLarge),
                 ..._serialData,
-              ])),
+                Expanded(
+                  child: buildVirtualKeyboard(), // Sanal klavyeyi burada çağır
+                ),
+              ])
+          ),
         ));
   }
 }
+
